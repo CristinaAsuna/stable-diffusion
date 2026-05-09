@@ -5,3 +5,12 @@ ldm/models/diffusion/dpm_solver/__pycache__/
 ldm/modules/diffusionmodules/__pycache__/
 *.ckpt
 src/
+.cache/
+ldm/models/__pycache__/
+ldm/modules/__pycache__/
+ldm/modules/distributions/__pycache__/
+ldm/modules/encoders/__pycache__/
+*__pycache__/
+.hf-cache/
+models/clip-vit-large-patch14/
+outputs/

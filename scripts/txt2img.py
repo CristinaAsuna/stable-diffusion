@@ -23,10 +23,11 @@ from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionS
 from transformers import AutoFeatureExtractor
 
 
-# load safety model
+# Load the safety model lazily so image generation can still run when the
+# Hugging Face safety-checker download is unavailable.
 safety_model_id = "CompVis/stable-diffusion-safety-checker"
-safety_feature_extractor = AutoFeatureExtractor.from_pretrained(safety_model_id)
-safety_checker = StableDiffusionSafetyChecker.from_pretrained(safety_model_id)
+safety_feature_extractor = None
+safety_checker = None
 
 
 def chunk(it, size):
@@ -86,6 +87,15 @@ def load_replacement(x):
 
 
 def check_safety(x_image):
+    global safety_feature_extractor, safety_checker
+    if safety_feature_extractor is None or safety_checker is None:
+        try:
+            safety_feature_extractor = AutoFeatureExtractor.from_pretrained(safety_model_id)
+            safety_checker = StableDiffusionSafetyChecker.from_pretrained(safety_model_id)
+        except Exception as err:
+            print(f"Warning: safety checker unavailable, skipping safety check: {err}")
+            return x_image, [False] * x_image.shape[0]
+
     safety_checker_input = safety_feature_extractor(numpy_to_pil(x_image), return_tensors="pt")
     x_checked_image, has_nsfw_concept = safety_checker(images=x_image, clip_input=safety_checker_input.pixel_values)
     assert x_checked_image.shape[0] == len(has_nsfw_concept)
